@@ -1,0 +1,28 @@
+{
+  "name": "cypress-api-tests",
+  "version": "1.0.0",
+  "description": "Testes automatizados da API de Vendas de Ingressos",
+  "main": "index.js",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "test": "cypress run",
+    "test:users": "cypress run --spec 'cypress/e2e/api/users.cy.js'",
+    "test:events": "cypress run --spec 'cypress/e2e/api/events.cy.js'",
+    "test:orders": "cypress run --spec 'cypress/e2e/api/orders.cy.js'",
+    "test:cart": "cypress run --spec 'cypress/e2e/api/cart.cy.js'",
+    "test:working": "cypress run --spec 'cypress/e2e/api/users.cy.js,cypress/e2e/api/events.cy.js,cypress/e2e/api/orders.cy.js'"
+  },
+  "keywords": [
+    "cypress",
+    "api",
+    "testing",
+    "e2e"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@cypress/grep": "^4.0.1",
+    "cypress": "^13.6.6"
+  }
+}

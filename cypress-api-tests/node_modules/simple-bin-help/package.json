@@ -1,0 +1,53 @@
+{
+  "name": "simple-bin-help",
+  "description": "Simple help and sanity checks for Node CLI bin scripts",
+  "main": "dist/index.js",
+  "version": "1.8.0",
+  "scripts": {
+    "test": "mocha spec",
+    "semantic-release": "semantic-release",
+    "size": "npm pack --dry",
+    "lint-ci": "standard src/index.js spec/*.js examples/*.js",
+    "lint": "standard --fix src/index.js spec/*.js examples/*.js",
+    "basic": "NODE_PATH=.. node examples/basic.js",
+    "build": "esbuild src/index.js --bundle --outfile=dist/index.js --platform=node --target=node14 --format=cjs --inject:./src/import-meta-url.js --define:import.meta.url=import_meta_url"
+  },
+  "engines": {
+    "node": ">=14.16"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bahmutov/simple-bin-help.git"
+  },
+  "keywords": [
+    "npm",
+    "cli",
+    "bin",
+    "utility",
+    "help",
+    "helper",
+    "update",
+    "start"
+  ],
+  "author": "Gleb Bahmutov <gleb.bahmutov@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bahmutov/simple-bin-help/issues"
+  },
+  "homepage": "https://github.com/bahmutov/simple-bin-help#readme",
+  "devDependencies": {
+    "check-more-types": "2.24.0",
+    "esbuild": "0.17.5",
+    "lazy-ass": "2.0.3",
+    "mocha": "10.2.0",
+    "semantic-release": "19.0.5",
+    "standard": "17.0.0",
+    "debug": "4.3.4",
+    "update-notifier": "6.0.2",
+    "word-wrap": "1.2.3"
+  },
+  "dependencies": {}
+}

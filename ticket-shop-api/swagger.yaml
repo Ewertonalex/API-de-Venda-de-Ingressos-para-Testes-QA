@@ -1,0 +1,1178 @@
+openapi: 3.0.0
+info:
+  title: API de Venda de Ingressos para Testes QA
+  description: Uma API para gerenciamento de venda de ingressos para eventos
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor de Desenvolvimento
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Login:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            nome:
+              type: string
+            email:
+              type: string
+              format: email
+            role:
+              type: string
+            dataCriacao:
+              type: string
+              format: date-time
+        token:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        telefone:
+          type: string
+        cpf:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, ORGANIZADOR, CLIENTE]
+        dataCriacao:
+          type: string
+          format: date-time
+        pedidos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+
+    EventCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        descricao:
+          type: string
+        iconeUrl:
+          type: string
+        dataCriacao:
+          type: string
+          format: date-time
+        eventos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        descricao:
+          type: string
+        local:
+          type: string
+        dataInicio:
+          type: string
+          format: date-time
+        dataFim:
+          type: string
+          format: date-time
+        imagemUrl:
+          type: string
+        ativo:
+          type: boolean
+        categoriaId:
+          type: string
+          format: uuid
+        dataCriacao:
+          type: string
+          format: date-time
+        categoria:
+          $ref: '#/components/schemas/EventCategory'
+        tiposIngressos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketType'
+
+    TicketType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+        descricao:
+          type: string
+        preco:
+          type: number
+          format: decimal
+        quantidadeDisponivel:
+          type: integer
+        dataInicioVenda:
+          type: string
+          format: date-time
+        dataFimVenda:
+          type: string
+          format: date-time
+        ativo:
+          type: boolean
+        eventoId:
+          type: string
+          format: uuid
+        dataCriacao:
+          type: string
+          format: date-time
+        evento:
+          $ref: '#/components/schemas/Event'
+        ingressos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          type: string
+        utilizado:
+          type: boolean
+        dataUtilizacao:
+          type: string
+          format: date-time
+        tipoIngressoId:
+          type: string
+          format: uuid
+        pedidoId:
+          type: string
+          format: uuid
+        dataCriacao:
+          type: string
+          format: date-time
+        tipoIngresso:
+          $ref: '#/components/schemas/TicketType'
+        pedido:
+          $ref: '#/components/schemas/Order'
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          type: string
+        valorTotal:
+          type: number
+          format: decimal
+        status:
+          type: string
+          enum: [PENDENTE, PAGO, CANCELADO]
+        formaPagamento:
+          type: string
+          enum: [CARTAO, PIX, BOLETO]
+        dataPagamento:
+          type: string
+          format: date-time
+        usuarioId:
+          type: string
+          format: uuid
+        dataCriacao:
+          type: string
+          format: date-time
+        usuario:
+          $ref: '#/components/schemas/User'
+        ingressos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+
+    Error:
+      type: object
+      properties:
+        erro:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              msg:
+                type: string
+              param:
+                type: string
+              location:
+                type: string
+
+paths:
+  /auth/register:
+    post:
+      summary: Registrar novo usuário
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - email
+                - senha
+              properties:
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+                telefone:
+                  type: string
+                cpf:
+                  type: string
+      responses:
+        '201':
+          description: Usuário registrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: Realizar login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /usuarios:
+    get:
+      summary: Listar usuários
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: nome
+          schema:
+            type: string
+        - in: query
+          name: email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Criar usuário
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - email
+                - senha
+              properties:
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                senha:
+                  type: string
+                  format: password
+                telefone:
+                  type: string
+                cpf:
+                  type: string
+                role:
+                  type: string
+                  enum: [ADMIN, ORGANIZADOR, CLIENTE]
+      responses:
+        '201':
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /usuarios/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID do usuário
+    
+    get:
+      summary: Obter usuário por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Atualizar usuário
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                telefone:
+                  type: string
+                cpf:
+                  type: string
+      responses:
+        '200':
+          description: Usuário atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Excluir usuário
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuário excluído com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuário não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /eventos:
+    get:
+      summary: Listar eventos
+      parameters:
+        - in: query
+          name: nome
+          schema:
+            type: string
+        - in: query
+          name: categoriaId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+    post:
+      summary: Criar evento
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nome
+                - descricao
+                - local
+                - dataInicio
+                - categoriaId
+              properties:
+                nome:
+                  type: string
+                descricao:
+                  type: string
+                local:
+                  type: string
+                dataInicio:
+                  type: string
+                  format: date-time
+                dataFim:
+                  type: string
+                  format: date-time
+                imagemUrl:
+                  type: string
+                ativo:
+                  type: boolean
+                categoriaId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Evento criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /eventos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID do evento
+    
+    get:
+      summary: Obter evento por ID
+      responses:
+        '200':
+          description: Evento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Atualizar evento
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                descricao:
+                  type: string
+                local:
+                  type: string
+                dataInicio:
+                  type: string
+                  format: date-time
+                dataFim:
+                  type: string
+                  format: date-time
+                imagemUrl:
+                  type: string
+                ativo:
+                  type: boolean
+                categoriaId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Evento atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Excluir evento
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Evento excluído com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Evento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /pedidos:
+    get:
+      summary: Listar pedidos do usuário
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Criar pedido (comprar ingressos)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tipoIngressoId
+                - quantidade
+              properties:
+                tipoIngressoId:
+                  type: string
+                  format: uuid
+                quantidade:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Pedido criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /pedidos/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID do pedido
+    
+    get:
+      summary: Obter pedido por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pedido encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Pedido não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Atualizar pedido
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [PENDENTE, PAGO, CANCELADO]
+                formaPagamento:
+                  type: string
+                  enum: [CARTAO, PIX, BOLETO]
+      responses:
+        '200':
+          description: Pedido atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Pedido não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Cancelar pedido
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pedido cancelado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Pedido não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /carrinho:
+    get:
+      summary: Obter carrinho atual do usuário
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Carrinho obtido com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  dataCriacao:
+                    type: string
+                    format: date-time
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        tipoIngressoId:
+                          type: string
+                          format: uuid
+                        quantidade:
+                          type: integer
+                        precoUnitario:
+                          type: number
+                          format: decimal
+                        dataCriacao:
+                          type: string
+                          format: date-time
+                        tipoIngresso:
+                          $ref: '#/components/schemas/TicketType'
+                  valorTotal:
+                    type: number
+                    format: decimal
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Limpar carrinho (remover todos os itens)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Carrinho esvaziado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  id:
+                    type: string
+                    format: uuid
+                  dataCriacao:
+                    type: string
+                    format: date-time
+                  itens:
+                    type: array
+                    items: {}
+                  valorTotal:
+                    type: number
+                    format: decimal
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Carrinho não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /carrinho/items:
+    post:
+      summary: Adicionar item ao carrinho
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tipoIngressoId
+                - quantidade
+              properties:
+                tipoIngressoId:
+                  type: string
+                  format: uuid
+                quantidade:
+                  type: integer
+                  minimum: 1
+      responses:
+        '201':
+          description: Item adicionado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  dataCriacao:
+                    type: string
+                    format: date-time
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        tipoIngressoId:
+                          type: string
+                          format: uuid
+                        quantidade:
+                          type: integer
+                        precoUnitario:
+                          type: number
+                          format: decimal
+                        dataCriacao:
+                          type: string
+                          format: date-time
+                        tipoIngresso:
+                          $ref: '#/components/schemas/TicketType'
+                  valorTotal:
+                    type: number
+                    format: decimal
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Tipo de ingresso não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /carrinho/items/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ID do item no carrinho
+    
+    put:
+      summary: Atualizar quantidade de um item no carrinho
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantidade
+              properties:
+                quantidade:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Item atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  dataCriacao:
+                    type: string
+                    format: date-time
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        tipoIngressoId:
+                          type: string
+                          format: uuid
+                        quantidade:
+                          type: integer
+                        precoUnitario:
+                          type: number
+                          format: decimal
+                        dataCriacao:
+                          type: string
+                          format: date-time
+                        tipoIngresso:
+                          $ref: '#/components/schemas/TicketType'
+                  valorTotal:
+                    type: number
+                    format: decimal
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item ou carrinho não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Remover item do carrinho
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Item removido com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  dataCriacao:
+                    type: string
+                    format: date-time
+                  itens:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        tipoIngressoId:
+                          type: string
+                          format: uuid
+                        quantidade:
+                          type: integer
+                        precoUnitario:
+                          type: number
+                          format: decimal
+                        dataCriacao:
+                          type: string
+                          format: date-time
+                        tipoIngresso:
+                          $ref: '#/components/schemas/TicketType'
+                  valorTotal:
+                    type: number
+                    format: decimal
+        '401':
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Item ou carrinho não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
